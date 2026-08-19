@@ -209,6 +209,7 @@ GitHub Actions
        Docker Hub
 ```
 This allows the project to automatically test and package the application whenever changes are made.
+
 ---
 
 ## GitHub Actions
@@ -394,5 +395,11 @@ These improvements would extend the project from a basic CI/CD pipeline into a m
 This project was built as a hands-on way to practice DevOps and CI/CD concepts.
 It demonstrates a complete basic workflow where application code is tested automatically, packaged into a Docker image, and published to Docker Hub through GitHub Actions.
 The project also uses Docker Compose and application health checks to verify that the containerized application is running correctly.
+
+---
+
+## Author
+
+AYUSH MANKAR
 
 ---
