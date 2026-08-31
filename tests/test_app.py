@@ -7,8 +7,7 @@ def test_home():
     response = client.get("/")
 
     assert response.status_code == 200
-    assert response.data == b"CI/CD Docker Project is running!"
-
+    assert response.data == b"Hello from Ayush - CI/CD v2 !!"
 
 def test_health():
     client = app.test_client()
