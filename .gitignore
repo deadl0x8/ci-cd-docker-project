@@ -6,3 +6,6 @@ env/
 .env
 .pytest_cache/
 .vscode/
+.terraform/
+*.tfstate
+*.tfstate.*
