@@ -1,12 +1,72 @@
 # CI/CD Docker Project
 
-A simple Python Flask application containerized with Docker and integrated with a CI/CD pipeline using GitHub Actions.
+A production-style DevOps project that demonstrates automated testing, Docker containerization, Docker Hub image publishing, Infrastructure as Code with Terraform, and automated deployment of a Flask application to an AWS EC2 instance using GitHub Actions.
 
-The main purpose of this project is to understand how application code moves through a basic DevOps workflow — from development and testing to Docker image creation and publishing the image to Docker Hub.
+The project demonstrates an end-to-end CI/CD workflow where application changes are automatically tested, containerized, published, and deployed to AWS.
+
 
 ## Architecture
 
 ![CI/CD Docker Project Architecture](architecture.png)
+
+
+
+```text
+Developer
+    │
+    │ git push
+    ▼
+GitHub Repository
+    │
+    ▼
+GitHub Actions
+    │
+    ├── Run Pytest
+    │
+    ├── Build Docker Image
+    │
+    ├── Push Image → Docker Hub
+    │
+    └── SSH Deployment
+             │
+             ▼
+        AWS EC2
+             │
+       Docker Compose
+             │
+             ▼
+        Flask App
+             │
+          Port 80
+```
+
+### AWS Infrastructure
+
+The AWS infrastructure is provisioned and managed using Terraform.
+
+```text
+Terraform
+   │
+   ▼
+AWS VPC
+   │
+   └── Public Subnet
+          │
+          ├── Internet Gateway
+          │
+          ├── Route Table
+          │
+          ├── Security Group
+          │
+          └── EC2 Instance
+                 │
+              Docker
+                 │
+             Flask App
+```
+
+Terraform manages the infrastructure configuration instead of requiring the AWS resources to be created manually.
+
 
 ## Project Overview
 
@@ -30,21 +90,28 @@ The published image can then be pulled and used to run the application as a Dock
 
 ## Technologies Used
 
-- Python
-- Flask
-- Pytest
-- Git
-- GitHub
-- GitHub Actions
-- Docker
-- Docker Compose
-- Docker Hub
+* Python
+* Flask
+* Pytest
+* Git
+* GitHub
+* GitHub Actions
+* Docker
+* Docker Compose
+* Docker Hub
+* AWS EC2
+* AWS VPC
+* AWS Security Groups
+* Terraform
+* SSH
+
 
 ---
 
 ## Project Structure
 
 ```text
+
 ci-cd-docker-project/
 │
 ├── app/
@@ -55,11 +122,16 @@ ci-cd-docker-project/
 ├── tests/
 │   └── test_app.py
 │
-├── scripts/
+├── terraform/
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── terraform.tfvars
+│   └── outputs.tf
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml
+│       ├── ci.yml
+│       └── deploy.yml
 │
 ├── .dockerignore
 ├── .gitignore
@@ -67,6 +139,9 @@ ci-cd-docker-project/
 ├── docker-compose.yml
 ├── architecture.png
 └── README.md
+
+ Terraform state files and generated `.terraform/` files are excluded from version control.
+
 ```
 
 ## Application
@@ -169,46 +244,154 @@ docker compose down
 ```
 ---
 
+## Docker Hub
+
+The Docker image is published to:
+```
+elnino08/ci-cd-docker-project:latest
+```
+The image can be pulled using:
+```
+docker pull elnino08/ci-cd-docker-project:latest
+```
+Then it can be run with:
+```
+docker run -d -p 5000:5000 --name ci-cd-app elnino08/ci-cd-docker-project:latest
+```
+
+---
+
+
+## Infrastructure as Code
+
+AWS infrastructure is provisioned using Terraform.
+The Terraform configuration creates and manages:
+
+* VPC
+* Public subnet
+* Internet Gateway
+* Public route table
+* Security Group
+* EC2 instance
+* Elastic IP
+
+Terraform variables are used for configurable values such as:
+
+* AWS region
+* VPC CIDR
+* Subnet CIDR
+* Availability Zone
+* AMI ID
+* EC2 instance type
+* EC2 key pair
+* SSH CIDR
+
+### Terraform commands
+
+Initialize Terraform:
+
+```bash
+terraform init
+```
+
+Format the configuration:
+
+```bash
+terraform fmt
+```
+
+Validate the configuration:
+
+```bash
+terraform validate
+```
+
+Review the infrastructure plan:
+
+```bash
+terraform plan
+```
+
+Apply the infrastructure:
+
+```bash
+terraform apply
+```
+
+The Terraform output provides the public IP address used for deployment.
+
+---
+
+
 ## CI/CD Pipeline
 
-The CI/CD workflow is defined in:
-```
-.github/workflows/ci.yml
-```
-The workflow runs when:
+The project uses GitHub Actions to automate both Continuous Integration and Continuous Deployment.
 
-Code is pushed to main
-A Pull Request targets main
+### Continuous Integration
 
-### Pipeline
-```
-Developer
-    │
-    │ git push / Pull Request
-    ▼
-GitHub Repository
-    │
-    ▼
+When changes are pushed to the `main` branch:
+
+1. GitHub Actions checks out the repository.
+2. Python 3.12 is configured.
+3. Application dependencies are installed.
+4. Pytest executes the automated tests.
+5. Docker Hub authentication is performed using GitHub Secrets.
+6. The Docker image is built.
+7. The image is pushed to Docker Hub.
+
+### Continuous Deployment
+
+After the CI process completes successfully:
+
+1. GitHub Actions connects to the AWS EC2 instance using SSH.
+2. The latest application code/image is deployed.
+3. Docker Compose recreates the application container.
+4. The Flask application becomes available through port 80.
+
+```text
+Git Push
+   │
+   ▼
 GitHub Actions
-    │
-    ├── Checkout code
-    │
-    ├── Set up Python
-    │
-    ├── Install dependencies
-    │
-    ├── Run Pytest
-    │
-    ├── Login to Docker Hub
-    │
-    ├── Build Docker image
-    │
-    └── Push Docker image
-            │
-            ▼
-       Docker Hub
+   │
+   ├── Pytest
+   │
+   ├── Docker Build
+   │
+   ├── Docker Hub Push
+   │
+   └── SSH
+        │
+        ▼
+     AWS EC2
+        │
+        ▼
+   Docker Compose
+        │
+        ▼
+    Flask App
 ```
-This allows the project to automatically test and package the application whenever changes are made.
+---
+
+## AWS Deployment
+
+The application is deployed to an AWS EC2 instance provisioned using Terraform.
+
+The EC2 instance runs Docker and Docker Compose. GitHub Actions connects to the instance using an SSH key and performs the deployment automatically.
+
+The application is exposed through HTTP port 80.
+
+The AWS infrastructure consists of:
+
+* VPC
+* Public subnet
+* Internet Gateway
+* Route table
+* Security Group
+* EC2 instance
+* Elastic IP
+
+The Security Group allows HTTP traffic on port 80 and SSH traffic on port 22 for CI/CD deployment.
 
 ---
 
@@ -244,22 +427,6 @@ The successfully built image is pushed to Docker Hub.
 
 ---
 
-## Docker Hub
-
-The Docker image is published to:
-```
-elnino08/ci-cd-docker-project:latest
-```
-The image can be pulled using:
-```
-docker pull elnino08/ci-cd-docker-project:latest
-```
-Then it can be run with:
-```
-docker run -d -p 5000:5000 --name ci-cd-app elnino08/ci-cd-docker-project:latest
-```
-
----
 
 ## GitHub Secrets
 
@@ -269,6 +436,8 @@ The workflow uses:
 ```
 DOCKERHUB_USERNAME
 DOCKERHUB_TOKEN
+EC2_HOST
+EC2_SSH_KEY
 ```
 These credentials are not stored directly in the workflow file.
 This keeps Docker Hub authentication information separate from the source code.
@@ -278,10 +447,11 @@ This keeps Docker Hub authentication information separate from the source code.
 
 ## Git Workflow
 
-During development, I used a feature branch and Pull Request workflow instead of making all changes directly on main.
+During development, I used a feature branch and Pull Request workflow instead of making all changes directly on `main`.
 
 The workflow was:
-```
+
+```text
 feature/ci-pipeline
         │
         ▼
@@ -290,14 +460,27 @@ feature/ci-pipeline
         ▼
  GitHub Actions
         │
-        ├── Tests
+        ├── Run Tests
         └── Docker Build
         │
         ▼
-     Review
+      Review
         │
         ▼
-     main
+      Merge
+        │
+        ▼
+      main
+        │
+        ▼
+ GitHub Actions
+        │
+        ├── Build & Push Docker Image
+        │
+        └── Deploy to AWS EC2
+        │
+        ▼
+    Running Application
 ```
 This helped verify the CI pipeline before merging the changes into the main branch.
 
@@ -356,18 +539,13 @@ The GitHub Actions pipeline successfully tested the application, built the Docke
 
 While building this project, I worked with:
 
-Git branching and Pull Requests
-GitHub repository management
-GitHub Actions workflows
-Automated testing with Pytest
-Docker image creation
-Docker containers
-Docker Compose
-Docker health checks
-Docker Hub
-GitHub Secrets
-CI/CD concepts
-Basic application deployment
+- Infrastructure as Code with Terraform
+- AWS VPC networking
+- EC2 provisioning
+- AWS Security Groups
+- SSH-based deployment
+- CI/CD deployment automation
+- Terraform variables and outputs
 
 The project helped me understand how different DevOps tools can be connected together instead of using each tool separately.
 
@@ -377,14 +555,13 @@ The project helped me understand how different DevOps tools can be connected tog
 
 The current project focuses on the basic CI/CD workflow. Some improvements I would like to add are:
 
-Docker image vulnerability scanning
-Infrastructure provisioning using Terraform
-Kubernetes deployment
-Kubernetes readiness and liveness probes
-Application monitoring
-Prometheus and Grafana integration
-Automated deployment to a cloud environment
-Deployment rollback strategy
+- Docker image vulnerability scanning
+- Kubernetes deployment
+- Prometheus and Grafana monitoring
+- Deployment rollback strategy
+- Blue/green or rolling deployments
+- Infrastructure remote state management
+
 
 These improvements would extend the project from a basic CI/CD pipeline into a more complete DevOps deployment workflow.
 
@@ -392,10 +569,11 @@ These improvements would extend the project from a basic CI/CD pipeline into a m
 
 ## Conclusion
 
-This project was built as a hands-on way to practice DevOps and CI/CD concepts.
-It demonstrates a complete basic workflow where application code is tested automatically, packaged into a Docker image, and published to Docker Hub through GitHub Actions.
-The project also uses Docker Compose and application health checks to verify that the containerized application is running correctly.
+This project successfully demonstrates the design and implementation of an end-to-end CI/CD pipeline for a Dockerized Flask application. GitHub Actions automates testing, Docker image building, and deployment, while Docker provides consistent application packaging and execution.
 
+The AWS infrastructure is provisioned and managed using Terraform, including the VPC, public subnet, Internet Gateway, route table, Security Group, and EC2 instance. The application is automatically deployed to the EC2 instance through SSH and Docker Compose.
+
+Overall, the project provides practical experience with Cloud Computing, Infrastructure as Code, Containerization, CI/CD automation, AWS, Terraform, GitHub Actions, and Docker, demonstrating how modern DevOps practices can be used to automate application delivery from source code to a running cloud environment.
 ---
 
 ## Author
