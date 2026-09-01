@@ -9,3 +9,5 @@ env/
 .terraform/
 *.tfstate
 *.tfstate.*
+
+terraform.tfvars
