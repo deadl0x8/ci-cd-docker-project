@@ -10,11 +10,12 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-south-1"
+  region = var.aws_region
+
 }
 
 resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -25,8 +26,8 @@ resource "aws_vpc" "main" {
 
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "ap-south-1a"
+  cidr_block              = var.public_subnet_cidr
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
 
   tags = {
@@ -70,8 +71,8 @@ resource "aws_security_group" "app" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-   cidr_blocks  = ["0.0.0.0/0"]
-    }
+    cidr_blocks = [var.ssh_cidr]
+  }
 
   ingress {
     description = "HTTP"
@@ -94,12 +95,18 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_instance" "app" {
-  ami                    = "ami-0f58b397bc5c1f2e8"
+  ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.app.id]
 
-  key_name = "cicd-project"
+  key_name = var.key_name
+
+  lifecycle {
+    ignore_changes = [
+      instance_type
+    ]
+  }
 
   tags = {
     Name = "ci-cd-docker-server"
@@ -110,3 +117,4 @@ output "ec2_public_ip" {
   description = "Public IP of the CI/CD EC2 instance"
   value       = aws_instance.app.public_ip
 }
+
