@@ -7,8 +7,6 @@ The project demonstrates an end-to-end CI/CD workflow where application changes 
 
 ## Architecture
 
-![CI/CD Docker Project Architecture](architecture.png)
-
 
 
 ```text
